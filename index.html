@@ -276,8 +276,13 @@
   }
 
   function renderTransit(data) {
-    const t = data.transit || { links: [], nearbyStops: [] };
-    els['transit-feed'].innerHTML = `<div class="item"><h3>Official tracker handoff</h3><p>${esc(t.status || 'Use official live trackers for arrivals.')}</p><span class="tag info">no-key realtime limited</span></div>` +
+    const t = data.transit || { links: [], nearbyStops: [], schedule: { upcoming: [] } };
+    const upcoming = t.schedule?.upcoming || [];
+    els['transit-value'].textContent = upcoming.length || 'LINK';
+    els['transit-sub'].textContent = upcoming.length ? `scheduled corridor ETAs · ${t.schedule.feedVersion || 'RTC GTFS'}` : 'Official trackers + route buttons';
+    const scheduleCards = upcoming.slice(0, 8).map(a => `<div class="item"><h3>${esc(a.route)} · ${esc(a.etaText)}</h3><p>${esc(a.stop)} → ${esc(a.headsign)} <span class="mono">${esc(a.scheduledTime)}</span></p><span class="tag info">${esc(a.anchor)}</span></div>`).join('');
+    els['transit-feed'].innerHTML = `<div class="item"><h3>RTC corridor schedule</h3><p>${esc(t.status || 'Use official live trackers for arrivals.')}</p><span class="tag ${upcoming.length ? 'good' : 'info'}">${upcoming.length ? 'official GTFS' : 'tracker handoff'}</span></div>` +
+      scheduleCards +
       (t.links || []).map(l => `<div class="item"><h3>${esc(l.label)}</h3><p><a href="${esc(l.url)}" target="_blank" rel="noopener">Open source <i class="fas fa-external-link-alt"></i></a></p></div>`).join('');
   }
 

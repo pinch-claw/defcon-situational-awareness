@@ -1,3 +1,5 @@
+import { RTC_CORRIDOR_DATA } from './rtc-corridor-data.js';
+
 const LVCC = { name: 'LVCC West Hall', lat: 36.1314766, lon: -115.1512278 };
 const SAHARA = { name: 'Sahara Las Vegas', lat: 36.1423481, lon: -115.1569128 };
 const KLAS = { name: 'Harry Reid International Airport', lat: 36.0861034, lon: -115.1611002 };
@@ -195,12 +197,104 @@ async function getTraffic() {
   };
 }
 
-function getTransit() {
+function yyyymmddInVegas(date = new Date()) {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Los_Angeles', year: 'numeric', month: '2-digit', day: '2-digit'
+  }).formatToParts(date).reduce((acc, p) => (acc[p.type] = p.value, acc), {});
+  return `${parts.year}${parts.month}${parts.day}`;
+}
+
+function secondsSinceVegasMidnight(date = new Date()) {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Los_Angeles', hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit'
+  }).formatToParts(date).reduce((acc, p) => (acc[p.type] = p.value, acc), {});
+  const hour = Number(parts.hour === '24' ? '0' : parts.hour);
+  return hour * 3600 + Number(parts.minute) * 60 + Number(parts.second);
+}
+
+function weekdayKeyInVegas(date = new Date()) {
+  return new Intl.DateTimeFormat('en-US', { timeZone: 'America/Los_Angeles', weekday: 'long' }).format(date).toLowerCase();
+}
+
+function gtfsTimeToSeconds(time) {
+  const [h, m, s] = String(time || '').trim().split(':').map(Number);
+  if ([h, m, s].some(Number.isNaN)) return null;
+  return h * 3600 + m * 60 + s;
+}
+
+function formatEta(minutes) {
+  if (minutes <= 0) return 'due';
+  if (minutes === 1) return '1 min';
+  return `${minutes} min`;
+}
+
+function activeServiceIdsForVegasDate(date = new Date()) {
+  const day = yyyymmddInVegas(date);
+  const weekday = weekdayKeyInVegas(date);
+  const active = new Set();
+  for (const c of RTC_CORRIDOR_DATA.calendar) {
+    if (c.start_date <= day && c.end_date >= day && c[weekday] === '1') active.add(c.service_id);
+  }
+  for (const ex of RTC_CORRIDOR_DATA.calendar_dates) {
+    if (ex.date !== day) continue;
+    if (ex.exception_type === '1') active.add(ex.service_id);
+    if (ex.exception_type === '2') active.delete(ex.service_id);
+  }
+  return active;
+}
+
+function getScheduledTransit(now = new Date()) {
+  const activeServices = activeServiceIdsForVegasDate(now);
+  const nowSeconds = secondsSinceVegasMidnight(now);
+  const trips = new Map(RTC_CORRIDOR_DATA.trips.map((t) => [t.trip_id, t]));
+  const stops = new Map(RTC_CORRIDOR_DATA.stops.map((s) => [s.stop_id, s]));
+  const upcoming = [];
+
+  for (const st of RTC_CORRIDOR_DATA.stopTimes) {
+    const trip = trips.get(st.trip_id);
+    if (!trip || !activeServices.has(trip.service_id)) continue;
+    const stopSeconds = gtfsTimeToSeconds(st.arrival_time);
+    if (stopSeconds == null) continue;
+    const delta = stopSeconds - nowSeconds;
+    if (delta < -90 || delta > 4 * 3600) continue;
+    const stop = stops.get(st.stop_id);
+    const minutes = Math.max(0, Math.round(delta / 60));
+    upcoming.push({
+      route: trip.route_short_name,
+      headsign: trip.headsign,
+      stop: stop?.stop_name || st.stop_id,
+      stopCode: stop?.stop_code || st.stop_id,
+      anchor: stop?.anchor || 'corridor',
+      etaMinutes: minutes,
+      etaText: formatEta(minutes),
+      scheduledTime: st.arrival_time,
+      source: 'RTC static GTFS schedule',
+    });
+  }
+
+  upcoming.sort((a, b) => a.etaMinutes - b.etaMinutes || a.route.localeCompare(b.route));
   return {
-    status: 'Public no-key GTFS-Realtime for RTC/LV Monorail was not available; official trackers are linked for live arrivals.',
+    mode: 'scheduled-static-gtfs',
+    feedVersion: RTC_CORRIDOR_DATA.feed_info.feed_version,
+    feedStartDate: RTC_CORRIDOR_DATA.feed_info.feed_start_date,
+    feedEndDate: RTC_CORRIDOR_DATA.feed_info.feed_end_date,
+    source: RTC_CORRIDOR_DATA.source,
+    sourceNote: RTC_CORRIDOR_DATA.source_note,
+    activeServiceCount: activeServices.size,
+    stopCount: RTC_CORRIDOR_DATA.stops.length,
+    upcoming: upcoming.slice(0, 14),
+  };
+}
+
+function getTransit() {
+  const schedule = getScheduledTransit();
+  return {
+    status: 'RTC GTFS-Realtime is Swiftly-gated, but the official static RTC schedule is embedded for corridor ETA planning. Use official trackers for actual live vehicle positions.',
+    schedule,
     links: [
       { label: 'RTC Real-Time Ride Tracker', url: 'https://www.rtcsnv.com/' },
-      { label: 'RTC GTFS static feed', url: 'https://github.com/RTCSNV/gtfs' },
+      { label: 'Official RTC GTFS static feed', url: 'https://developer.rtcsnv.com/transitData/google_transit.zip' },
+      { label: 'Transitland RTC realtime metadata', url: 'https://transit.land/feeds/f-rtcsnv~rt' },
       { label: 'Las Vegas Monorail schedule/status', url: 'https://www.lvmonorail.com/' },
       { label: 'Google transit directions: Sahara → LVCC West', url: 'https://www.google.com/maps/dir/Sahara+Las+Vegas,+2535+S+Las+Vegas+Blvd,+Las+Vegas,+NV+89109/Las+Vegas+Convention+Center+West+Hall,+Las+Vegas,+NV' },
     ],
@@ -223,7 +317,8 @@ export async function onRequestGet() {
 
   sourceHealth.push({ name: 'National Weather Service API', url: 'https://api.weather.gov/', ok: weatherRes.status === 'fulfilled' });
   sourceHealth.push({ name: 'Nevada 511 map feed', url: 'https://www.nvroads.com/', ok: trafficRes.status === 'fulfilled' && !traffic.errors?.length });
-  sourceHealth.push({ name: 'RTC / Monorail live trackers', url: 'https://www.rtcsnv.com/', ok: true, note: 'linked; no no-key realtime feed embedded' });
+  sourceHealth.push({ name: 'RTC static GTFS corridor schedule', url: 'https://developer.rtcsnv.com/transitData/google_transit.zip', ok: true, note: `embedded schedule ${RTC_CORRIDOR_DATA.feed_info.feed_version}` });
+  sourceHealth.push({ name: 'RTC / Monorail live trackers', url: 'https://www.rtcsnv.com/', ok: true, note: 'linked; realtime feed requires Swiftly authorization' });
 
   return json({
     generatedAt: new Date().toISOString(),
