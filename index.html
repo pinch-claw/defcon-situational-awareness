@@ -8,114 +8,107 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
 <style>
   :root {
-    --bg: #0a0a0f;
-    --surface: #12121a;
-    --surface-2: #1a1a28;
-    --border: #2a2a3a;
-    --text: #e0e0e0;
-    --text-dim: #8888a0;
+    --bg: #07080d;
+    --surface: #10131d;
+    --surface-2: #171b28;
+    --surface-3: #202637;
+    --border: #2a3248;
+    --text: #edf2ff;
+    --text-dim: #9aa7c4;
+    --muted: #66708a;
     --accent: #00ff9d;
     --accent-2: #00d4ff;
     --warning: #ffaa00;
-    --danger: #ff4444;
-    --success: #00ff9d;
-    --radius: 8px;
-    --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    --danger: #ff4d6d;
+    --purple: #c084fc;
+    --radius: 14px;
+    --shadow: 0 20px 60px rgba(0, 0, 0, .35);
+    --font: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif;
     --mono: 'SF Mono', Monaco, 'Cascadia Code', monospace;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { height: 100%; }
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: var(--font);
-    line-height: 1.5;
-    overflow-x: hidden;
-  }
-  .app { display: flex; flex-direction: column; height: 100vh; }
+  html, body { min-height: 100%; background: var(--bg); color: var(--text); }
+  body { font-family: var(--font); line-height: 1.5; overflow-x: hidden; }
+  a { color: var(--accent-2); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  button { font: inherit; }
+
+  .app { min-height: 100vh; display: flex; flex-direction: column; background: radial-gradient(circle at 20% -10%, rgba(0,255,157,.16), transparent 28%), radial-gradient(circle at 80% 0%, rgba(0,212,255,.14), transparent 26%), var(--bg); }
   header {
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    padding: 0.75rem 1.25rem;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 0.5rem;
+    position: sticky; top: 0; z-index: 900;
+    display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
+    padding: .85rem 1.1rem; background: rgba(7,8,13,.84); backdrop-filter: blur(14px);
+    border-bottom: 1px solid rgba(255,255,255,.08);
   }
-  .brand { display: flex; align-items: center; gap: 0.75rem; }
-  .brand .logo {
-    width: 36px; height: 36px;
-    background: linear-gradient(135deg, var(--accent), var(--accent-2));
-    border-radius: var(--radius);
-    display: grid; place-items: center;
-    font-weight: 900; color: #000;
-    font-size: 1.1rem;
-  }
-  .brand h1 { font-size: 1.15rem; font-weight: 700; letter-spacing: -0.02em; }
-  .brand span { font-size: 0.75rem; color: var(--text-dim); display: block; margin-top: -2px; }
-  .meta { display: flex; align-items: center; gap: 1rem; font-family: var(--mono); font-size: 0.8rem; color: var(--text-dim); }
-  .meta .clock { color: var(--accent); font-weight: 600; }
-  .meta .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); display: inline-block; animation: pulse 2s infinite; }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+  .brand { display: flex; align-items: center; gap: .8rem; min-width: 280px; }
+  .logo { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 12px; color: #00130d; font-weight: 950; background: linear-gradient(135deg, var(--accent), var(--accent-2)); box-shadow: 0 0 30px rgba(0,255,157,.24); }
+  .brand h1 { font-size: clamp(1.05rem, 2vw, 1.35rem); letter-spacing: -.03em; }
+  .brand span { display: block; color: var(--text-dim); font-size: .78rem; margin-top: -2px; }
+  .meta { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; color: var(--text-dim); font-family: var(--mono); font-size: .78rem; }
+  .pill { display: inline-flex; align-items: center; gap: .4rem; padding: .35rem .55rem; border: 1px solid rgba(255,255,255,.09); border-radius: 999px; background: rgba(255,255,255,.045); }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--warning); box-shadow: 0 0 12px var(--warning); }
+  .status-dot.ok { background: var(--accent); box-shadow: 0 0 12px var(--accent); }
+  .status-dot.bad { background: var(--danger); box-shadow: 0 0 12px var(--danger); }
+  .refresh { cursor: pointer; color: var(--accent); }
 
-  .main { display: flex; flex: 1; overflow: hidden; }
-  .sidebar {
-    width: 340px;
-    background: var(--surface);
-    border-right: 1px solid var(--border);
-    display: flex;
-    flex-direction: column;
-    overflow-y: auto;
-  }
-  .panel { padding: 1rem; border-bottom: 1px solid var(--border); }
-  .panel-title { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.4rem; }
+  .hero { display: grid; grid-template-columns: 1.05fr .95fr; gap: 1rem; padding: 1rem; }
+  .panel, .metric, .source-row { background: rgba(16,19,29,.88); border: 1px solid rgba(255,255,255,.08); border-radius: var(--radius); box-shadow: var(--shadow); }
+  .panel { overflow: hidden; }
+  .panel-head { display:flex; align-items:center; justify-content:space-between; gap:.75rem; padding: .85rem 1rem; border-bottom: 1px solid rgba(255,255,255,.08); }
+  .panel-title { display:flex; align-items:center; gap:.5rem; color: var(--text); font-size:.8rem; text-transform: uppercase; letter-spacing: .08em; font-weight: 800; }
   .panel-title i { color: var(--accent); }
-  .card {
-    background: var(--surface-2);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 0.75rem;
-    margin-bottom: 0.5rem;
-    transition: border-color .2s;
-  }
-  .card:hover { border-color: var(--accent); }
-  .card h3 { font-size: 0.9rem; margin-bottom: 0.25rem; }
-  .card p, .card a { font-size: 0.8rem; color: var(--text-dim); }
-  .card a { color: var(--accent-2); text-decoration: none; }
-  .card a:hover { text-decoration: underline; }
-  .badge {
-    display: inline-block; padding: 0.15rem 0.45rem; border-radius: 999px; font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
-    margin-top: 0.35rem;
-  }
-  .badge-green { background: rgba(0,255,157,.12); color: var(--success); border: 1px solid rgba(0,255,157,.25); }
-  .badge-yellow { background: rgba(255,170,0,.12); color: var(--warning); border: 1px solid rgba(255,170,0,.25); }
-  .badge-red { background: rgba(255,68,68,.12); color: var(--danger); border: 1px solid rgba(255,68,68,.25); }
+  .panel-body { padding: 1rem; }
+  .commander { min-height: 220px; display: flex; flex-direction: column; justify-content: space-between; }
+  .commander h2 { font-size: clamp(1.8rem, 4vw, 3.2rem); line-height: .98; letter-spacing: -.06em; margin-bottom: .8rem; }
+  .commander p { color: var(--text-dim); max-width: 68ch; }
+  .action-row { display: flex; gap: .6rem; flex-wrap: wrap; margin-top: 1rem; }
+  .btn { display:inline-flex; align-items:center; gap:.45rem; padding:.6rem .8rem; border-radius: 10px; border:1px solid rgba(255,255,255,.1); background: var(--surface-2); color: var(--text); text-decoration:none; }
+  .btn.primary { background: linear-gradient(135deg, rgba(0,255,157,.22), rgba(0,212,255,.18)); border-color: rgba(0,255,157,.36); }
 
-  .map-wrap { flex: 1; position: relative; }
-  #map { width: 100%; height: 100%; }
-  .map-overlay {
-    position: absolute; bottom: 1rem; left: 1rem; z-index: 500;
-    background: rgba(10,10,15,.92); backdrop-filter: blur(6px);
-    border: 1px solid var(--border); border-radius: var(--radius);
-    padding: 0.6rem 0.8rem; font-size: 0.75rem; color: var(--text-dim);
-    max-width: 220px;
-  }
-  .map-overlay strong { color: var(--accent); }
+  .metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; }
+  .metric { padding: .85rem; min-height: 100px; }
+  .metric .label { display:flex; align-items:center; gap:.45rem; color: var(--text-dim); font-size:.72rem; text-transform: uppercase; letter-spacing:.08em; font-weight:800; }
+  .metric .value { font-size: 1.65rem; font-weight: 900; letter-spacing: -.04em; margin-top: .35rem; }
+  .metric .sub { color: var(--text-dim); font-size: .78rem; margin-top: .2rem; }
 
-  .legend {
-    position: absolute; top: 1rem; right: 1rem; z-index: 500;
-    background: rgba(10,10,15,.92); backdrop-filter: blur(6px);
-    border: 1px solid var(--border); border-radius: var(--radius);
-    padding: 0.6rem 0.8rem; font-size: 0.75rem;
+  .main { display: grid; grid-template-columns: 380px 1fr; gap: 1rem; padding: 0 1rem 1rem; min-height: 680px; }
+  .sidebar { display:flex; flex-direction:column; gap:1rem; min-width:0; }
+  .map-card { position: sticky; top: 76px; height: calc(100vh - 92px); min-height: 620px; }
+  #map { width: 100%; height: 100%; border-radius: var(--radius); background: #0b0e14; }
+  .map-overlay, .legend {
+    position: absolute; z-index: 500; background: rgba(7,8,13,.9); backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,.1); border-radius: 12px; padding: .65rem .8rem; font-size: .76rem; color: var(--text-dim);
   }
-  .legend-item { display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.25rem; }
-  .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .map-overlay { bottom: 1rem; left: 1rem; max-width: 280px; }
+  .legend { top: 1rem; right: 1rem; }
+  .legend-item { display:flex; align-items:center; gap:.45rem; margin-bottom:.25rem; }
+  .legend-dot { width:10px; height:10px; border-radius:50%; }
 
-  @media (max-width: 900px) {
-    .main { flex-direction: column; }
-    .sidebar { width: 100%; border-right: none; border-bottom: 1px solid var(--border); max-height: 45vh; }
-    #map { min-height: 55vh; }
+  .feed { display:flex; flex-direction:column; gap:.65rem; }
+  .item { padding:.75rem; border:1px solid rgba(255,255,255,.08); border-radius:12px; background: rgba(255,255,255,.04); }
+  .item h3 { font-size:.9rem; margin-bottom:.25rem; }
+  .item p { color: var(--text-dim); font-size:.8rem; }
+  .tag { display:inline-flex; align-items:center; gap:.3rem; padding:.18rem .45rem; border-radius:999px; font-size:.64rem; font-weight:800; text-transform:uppercase; letter-spacing:.04em; margin-top:.4rem; border:1px solid rgba(255,255,255,.09); }
+  .tag.good { color: var(--accent); background: rgba(0,255,157,.1); border-color: rgba(0,255,157,.28); }
+  .tag.warn { color: var(--warning); background: rgba(255,170,0,.1); border-color: rgba(255,170,0,.28); }
+  .tag.bad { color: var(--danger); background: rgba(255,77,109,.1); border-color: rgba(255,77,109,.28); }
+  .tag.info { color: var(--accent-2); background: rgba(0,212,255,.1); border-color: rgba(0,212,255,.28); }
+
+  .sources { display:flex; flex-direction:column; gap:.5rem; }
+  .source-row { padding:.7rem; display:flex; align-items:flex-start; justify-content:space-between; gap:.75rem; box-shadow:none; }
+  .source-row strong { display:block; font-size:.82rem; }
+  .source-row span { display:block; color: var(--text-dim); font-size:.72rem; }
+  .mono { font-family: var(--mono); }
+  .muted { color: var(--text-dim); }
+
+  @media (max-width: 1060px) {
+    .hero, .main { grid-template-columns: 1fr; }
+    .map-card { position: relative; top: auto; height: 62vh; min-height: 460px; }
+  }
+  @media (max-width: 620px) {
+    header { align-items: flex-start; }
+    .metrics { grid-template-columns: 1fr; }
+    .main, .hero { padding-left: .65rem; padding-right: .65rem; }
   }
 </style>
 </head>
@@ -130,180 +123,190 @@
       </div>
     </div>
     <div class="meta">
-      <span><span class="status-dot"></span> LIVE</span>
-      <span class="clock" id="clock">--:--:-- PT</span>
-      <span id="last-updated">Updated: now</span>
+      <span class="pill"><span class="status-dot" id="live-dot"></span><span id="live-status">CONNECTING</span></span>
+      <span class="pill clock" id="clock">--:--:-- PT</span>
+      <button class="pill refresh" id="refresh" title="Refresh live feeds"><i class="fas fa-rotate"></i> Refresh</button>
+      <span class="pill" id="last-updated">Updated: pending</span>
     </div>
   </header>
 
-  <div class="main">
+  <section class="hero">
+    <div class="panel commander">
+      <div class="panel-body">
+        <h2>Vegas ops board for the crew.</h2>
+        <p>Live-ish public feeds, fast links, and map context for moving between Sahara, LVCC West Hall, the airport, and the Strip without getting smoked by closures, heat, or transit weirdness.</p>
+        <div class="action-row">
+          <a class="btn primary" href="https://www.google.com/maps/dir/Sahara+Las+Vegas,+2535+S+Las+Vegas+Blvd,+Las+Vegas,+NV+89109/Las+Vegas+Convention+Center+West+Hall,+Las+Vegas,+NV" target="_blank" rel="noopener"><i class="fas fa-route"></i> Sahara → LVCC</a>
+          <a class="btn" href="https://www.nvroads.com/" target="_blank" rel="noopener"><i class="fas fa-road"></i> Nevada 511</a>
+          <a class="btn" href="https://www.rtcsnv.com/" target="_blank" rel="noopener"><i class="fas fa-bus"></i> RTC Tracker</a>
+          <a class="btn" href="https://www.lvmonorail.com/" target="_blank" rel="noopener"><i class="fas fa-train"></i> Monorail</a>
+        </div>
+      </div>
+    </div>
+    <div class="metrics">
+      <div class="metric"><div class="label"><i class="fas fa-temperature-three-quarters"></i> Weather Now</div><div class="value" id="weather-value">--</div><div class="sub" id="weather-sub">National Weather Service</div></div>
+      <div class="metric"><div class="label"><i class="fas fa-triangle-exclamation"></i> Active Alerts</div><div class="value" id="alerts-value">--</div><div class="sub" id="alerts-sub">NWS watches/warnings</div></div>
+      <div class="metric"><div class="label"><i class="fas fa-road"></i> Road Intelligence</div><div class="value" id="road-value">--</div><div class="sub" id="road-sub">Nevada 511 corridor scan</div></div>
+      <div class="metric"><div class="label"><i class="fas fa-bus"></i> Transit Ops</div><div class="value" id="transit-value">LINK</div><div class="sub" id="transit-sub">Official trackers + route buttons</div></div>
+    </div>
+  </section>
+
+  <main class="main">
     <aside class="sidebar">
-      <div class="panel">
-        <div class="panel-title"><i class="fas fa-bullhorn"></i> Active Alerts</div>
-        <div class="card" id="alert-box">
-          <h3>No Critical Alerts</h3>
-          <p>Check external feeds below for real-time road closures and transit disruptions.</p>
-          <span class="badge badge-green">All Clear</span>
-        </div>
-      </div>
+      <section class="panel">
+        <div class="panel-head"><div class="panel-title"><i class="fas fa-bullhorn"></i> Alert Feed</div><span class="tag info">NWS</span></div>
+        <div class="panel-body"><div class="feed" id="alert-feed"><div class="item"><h3>Loading live alerts…</h3><p>Pulling from api.weather.gov.</p></div></div></div>
+      </section>
 
-      <div class="panel">
-        <div class="panel-title"><i class="fas fa-car"></i> Traffic & Roads</div>
-        <div class="card">
-          <h3><i class="fas fa-map-marked-alt" style="color:var(--accent-2)"></i> Google Maps Traffic</h3>
-          <p>Live traffic layer for the LVCC West Hall / Sahara corridor.</p>
-          <a href="https://www.google.com/maps/search/Sahara+Las+Vegas/@36.1423,-115.1569,15z/data=!5m1!1e1" target="_blank" rel="noopener">Open Traffic Map <i class="fas fa-external-link-alt" style="font-size:.65rem"></i></a>
-        </div>
-        <div class="card">
-          <h3><i class="fas fa-road" style="color:var(--warning)"></i> NDOT Road Conditions</h3>
-          <p>Nevada DOT road closures and construction.</p>
-          <a href="https://www.nvroads.com/" target="_blank" rel="noopener">NV Roads <i class="fas fa-external-link-alt" style="font-size:.65rem"></i></a>
-        </div>
-        <div class="card">
-          <h3><i class="fas fa-taxi" style="color:var(--accent)"></i> Rideshare / Taxi</h3>
-          <p>Expect surge pricing around Sahara and LVCC West Hall.</p>
-          <span class="badge badge-yellow">Elevated Demand Expected</span>
-        </div>
-      </div>
+      <section class="panel">
+        <div class="panel-head"><div class="panel-title"><i class="fas fa-road-circle-exclamation"></i> Road Intelligence</div><span class="tag warn">NV 511</span></div>
+        <div class="panel-body"><div class="feed" id="road-feed"><div class="item"><h3>Scanning corridor…</h3><p>Checking NDOT/Nevada 511 map layers near LVCC, Sahara, and LAS.</p></div></div></div>
+      </section>
 
-      <div class="panel">
-        <div class="panel-title"><i class="fas fa-bus"></i> Transit</div>
-        <div class="card">
-          <h3><i class="fas fa-shuttle-van" style="color:var(--accent-2)"></i> RTC / The Deuce</h3>
-          <p>24hr bus service on Las Vegas Blvd. Routes 108, Deuce, WX.</p>
-          <a href="https://www.rtcsnv.com/" target="_blank" rel="noopener">RTC Schedules <i class="fas fa-external-link-alt" style="font-size:.65rem"></i></a>
-        </div>
-        <div class="card">
-          <h3><i class="fas fa-train" style="color:var(--accent)"></i> Las Vegas Monorail</h3>
-          <p>Sahara station is the crew-side railhead; Boingo Station serves LVCC West Hall.</p>
-          <a href="https://www.lvmonorail.com/" target="_blank" rel="noopener">Monorail Schedule <i class="fas fa-external-link-alt" style="font-size:.65rem"></i></a>
-        </div>
-      </div>
+      <section class="panel">
+        <div class="panel-head"><div class="panel-title"><i class="fas fa-train-subway"></i> Transit Ops</div><span class="tag info">Routes</span></div>
+        <div class="panel-body"><div class="feed" id="transit-feed"></div></div>
+      </section>
 
-      <div class="panel">
-        <div class="panel-title"><i class="fas fa-plane-departure"></i> Airport</div>
-        <div class="card">
-          <h3><i class="fas fa-plane" style="color:var(--accent-2)"></i> Harry Reid (LAS)</h3>
-          <p>~4.5 miles south of Sahara. Allow extra time for security lines during con week.</p>
-          <a href="https://www.harryreidairport.com/" target="_blank" rel="noopener">Flight Status <i class="fas fa-external-link-alt" style="font-size:.65rem"></i></a>
-        </div>
-      </div>
-
-      <div class="panel">
-        <div class="panel-title"><i class="fas fa-cloud-sun"></i> Weather</div>
-        <div class="card">
-          <h3>Las Vegas Forecast</h3>
-          <p>August in Vegas: expect 100–110°F days, dry heat. Hydrate constantly.</p>
-          <a href="https://www.weather.gov/vef/" target="_blank" rel="noopener">NWS Las Vegas <i class="fas fa-external-link-alt" style="font-size:.65rem"></i></a>
-        </div>
-      </div>
+      <section class="panel">
+        <div class="panel-head"><div class="panel-title"><i class="fas fa-satellite-dish"></i> Live Data Sources</div><span class="tag good" id="SourceHealth">SourceHealth</span></div>
+        <div class="panel-body"><div class="sources" id="source-feed"><div class="source-row"><strong>Loading source health…</strong><span>Stand by.</span></div></div></div>
+      </section>
     </aside>
 
-    <div class="map-wrap">
+    <section class="panel map-card">
       <div id="map"></div>
       <div class="legend">
         <div class="legend-item"><div class="legend-dot" style="background:var(--accent)"></div> DEF CON / LVCC West</div>
         <div class="legend-item"><div class="legend-dot" style="background:var(--accent-2)"></div> Crew Rally / Sahara</div>
         <div class="legend-item"><div class="legend-dot" style="background:var(--warning)"></div> Airport</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#ff00ff"></div> Monorail</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#ffffff"></div> Bus Stop</div>
-        <div class="legend-item" style="margin-top:.25rem;opacity:.7;font-size:.65rem;">Impact zone = 1 mi radius</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#fff"></div> Transit</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--danger)"></div> Live road event</div>
       </div>
-      <div class="map-overlay">
-        <strong>Impact Zone</strong><br>
-        1 mi (1.6 km) radius around Sahara captures the crew-side foot-traffic and transit corridor.
-      </div>
-    </div>
-  </div>
+      <div class="map-overlay"><strong>Impact Zone</strong><br>1 mi radius around Sahara + live road-event scan within ~12 mi of Sahara/LVCC/LAS.</div>
+    </section>
+  </main>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-  (function(){
-    // Clock
-    function updateClock(){
-      const now = new Date();
-      const opts = { timeZone:'America/Los_Angeles', hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false };
-      document.getElementById('clock').textContent = now.toLocaleTimeString('en-US', opts) + ' PT';
+  const anchors = {
+    lvcc: { lat: 36.1314766, lon: -115.1512278, name: 'DEF CON 34 — LVCC West Hall' },
+    sahara: { lat: 36.1423481, lon: -115.1569128, name: 'Crew Rally Point — Sahara Las Vegas' },
+    airport: { lat: 36.0861034, lon: -115.1611002, name: 'Harry Reid International Airport (LAS)' },
+  };
+
+  const els = Object.fromEntries(['live-dot','live-status','clock','last-updated','refresh','weather-value','weather-sub','alerts-value','alerts-sub','road-value','road-sub','transit-value','transit-sub','alert-feed','road-feed','transit-feed','source-feed'].map(id => [id, document.getElementById(id)]));
+  let lastData = null;
+  let trafficLayer = null;
+
+  function updateClock(){
+    const now = new Date();
+    const opts = { timeZone:'America/Los_Angeles', hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false };
+    els.clock.textContent = now.toLocaleTimeString('en-US', opts) + ' PT';
+  }
+  setInterval(updateClock, 1000); updateClock();
+
+  const map = L.map('map', { zoomControl: false }).setView([36.1368, -115.1551], 13);
+  L.control.zoom({ position: 'bottomright' }).addTo(map);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; OpenStreetMap &copy; CARTO', subdomains: 'abcd', maxZoom: 20
+  }).addTo(map);
+
+  function icon(color, size = 15) {
+    return L.divIcon({ className: 'custom-marker', html: `<div style="width:${size}px;height:${size}px;border-radius:50%;background:${color};border:2px solid #07080d;box-shadow:0 0 14px ${color};"></div>`, iconSize: [size, size], iconAnchor: [size/2, size/2] });
+  }
+  [
+    { ...anchors.lvcc, color:'#00ff9d' },
+    { ...anchors.sahara, color:'#00d4ff' },
+    { ...anchors.airport, color:'#ffaa00' },
+    { lat: 36.1425082, lon: -115.1546065, name:'Sahara Monorail Station', color:'#fff' },
+    { lat: 36.1322, lon: -115.1540, name:'Boingo Station at LVCC', color:'#fff' },
+  ].forEach(p => L.marker([p.lat, p.lon], { icon: icon(p.color) }).addTo(map).bindPopup(`<b>${p.name}</b>`));
+  L.circle([anchors.sahara.lat, anchors.sahara.lon], { radius: 1609.34, color:'#00d4ff', fillColor:'#00d4ff', fillOpacity:.045, weight:1.5, dashArray:'6,6' }).addTo(map).bindPopup('Crew-side Impact Zone (1 mile)');
+  L.polyline([[anchors.sahara.lat, anchors.sahara.lon], [anchors.lvcc.lat, anchors.lvcc.lon]], { color:'#00d4ff', weight:2, opacity:.75, dashArray:'4,8' }).addTo(map).bindPopup('Sahara ⇄ LVCC West Hall corridor');
+  const routeControl = L.control({ position: 'topright' });
+  routeControl.onAdd = function() {
+    const div = L.DomUtil.create('div');
+    div.innerHTML = `<a href="https://www.google.com/maps/dir/Harry+Reid+International+Airport,+Las+Vegas,+NV/Sahara+Las+Vegas,+2535+S+Las+Vegas+Blvd,+Las+Vegas,+NV+89109" target="_blank" rel="noopener" style="background:rgba(7,8,13,.92);color:#00d4ff;border:1px solid #2a3248;padding:.45rem .65rem;border-radius:10px;text-decoration:none;font-size:.78rem;"><i class="fas fa-route"></i> Airport → Sahara</a>`;
+    return div;
+  };
+  routeControl.addTo(map);
+
+  function esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  function tagClass(severity) { return /high|extreme|severe/i.test(severity || '') ? 'bad' : /medium|moderate|minor|watch|advisory/i.test(severity || '') ? 'warn' : 'info'; }
+  function setStatus(ok, text) { els['live-dot'].className = 'status-dot ' + (ok ? 'ok' : 'bad'); els['live-status'].textContent = text; }
+
+  function renderAlerts(data) {
+    const alerts = data.weather?.alerts || [];
+    els['alerts-value'].textContent = alerts.length;
+    els['alerts-sub'].textContent = alerts.length ? 'Tap source for details' : 'No active NWS alerts for LVCC';
+    if (!alerts.length) {
+      els['alert-feed'].innerHTML = '<div class="item"><h3>No active weather alerts</h3><p>NWS reports no watches/warnings/advisories for the LVCC coordinate right now.</p><span class="tag good">All clear</span></div>';
+      return;
     }
-    setInterval(updateClock, 1000);
-    updateClock();
+    els['alert-feed'].innerHTML = alerts.map(a => `<div class="item"><h3>${esc(a.event || 'Weather alert')}</h3><p>${esc(a.headline || a.instruction || 'See NWS for details.')}</p><span class="tag ${tagClass(a.severity)}">${esc(a.severity || 'alert')}</span></div>`).join('');
+  }
 
-    // Last updated timer
-    const start = Date.now();
-    setInterval(() => {
-      const s = Math.floor((Date.now() - start) / 1000);
-      const m = Math.floor(s / 60);
-      const h = Math.floor(m / 60);
-      let txt = 'Updated: ';
-      if (h) txt += h + 'h ';
-      if (m % 60) txt += (m % 60) + 'm ';
-      txt += (s % 60) + 's ago';
-      document.getElementById('last-updated').textContent = txt;
-    }, 5000);
+  function renderWeather(data) {
+    const c = data.weather?.current || {};
+    els['weather-value'].textContent = c.temperatureF == null ? '--' : `${c.temperatureF}°F`;
+    const wind = c.windMph == null ? 'wind n/a' : `${c.windMph} mph wind`;
+    els['weather-sub'].textContent = `${c.text || 'Latest airport obs'} · ${wind}`;
+  }
 
-    // Map
-    const map = L.map('map', { zoomControl: false }).setView([36.1423, -115.1569], 14);
-    L.control.zoom({ position: 'bottomright' }).addTo(map);
-
-    // Dark-themed tiles (CartoDB Dark Matter)
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-      attribution: '&copy; OpenStreetMap &copy; CARTO',
-      subdomains: 'abcd',
-      maxZoom: 20
-    }).addTo(map);
-
-    const icon = (color) => L.divIcon({
-      className: 'custom-marker',
-      html: `<div style="width:14px;height:14px;border-radius:50%;background:${color};border:2px solid #0a0a0f;box-shadow:0 0 8px ${color};"></div>`,
-      iconSize: [14, 14],
-      iconAnchor: [7, 7]
+  function renderRoads(data) {
+    const traffic = data.traffic || { items: [], counts: {} };
+    els['road-value'].textContent = traffic.counts?.nearCorridor ?? 0;
+    els['road-sub'].textContent = `${traffic.counts?.statewide ?? 0} statewide live map items · ${traffic.counts?.shown ?? 0} shown`;
+    const items = traffic.items || [];
+    if (!items.length) {
+      els['road-feed'].innerHTML = '<div class="item"><h3>No nearby live road events found</h3><p>Nevada 511 returned no incidents/closures/construction near the corridor scan radius.</p><span class="tag good">Clean corridor</span></div>';
+    } else {
+      els['road-feed'].innerHTML = items.slice(0, 8).map(i => `<div class="item"><h3>${esc(i.label)}</h3><p>${esc(i.summary || i.title)} ${i.nearestDistanceMiles != null ? `<span class="mono">(${i.nearestDistanceMiles} mi)</span>` : ''}</p><span class="tag ${tagClass(i.severity)}">${esc(i.layer)}</span></div>`).join('');
+    }
+    if (trafficLayer) trafficLayer.remove();
+    trafficLayer = L.layerGroup().addTo(map);
+    items.forEach(i => {
+      if (!i.lat || !i.lon) return;
+      L.marker([i.lat, i.lon], { icon: icon(i.severity === 'high' ? '#ff4d6d' : '#ffaa00', 13) })
+        .addTo(trafficLayer)
+        .bindPopup(`<b>${esc(i.label)}</b><br>${esc(i.summary || '')}<br><span>${esc(i.nearestDistanceMiles)} mi from corridor anchor</span>`);
     });
+  }
 
-    const poi = [
-      { lat: 36.1314766, lon: -115.1512278, name: 'DEF CON 34 — LVCC West Hall', type: 'defcon', color: '#00ff9d' },
-      { lat: 36.1423481, lon: -115.1569128, name: 'Crew Rally Point — Sahara Las Vegas', type: 'rally', color: '#00d4ff' },
-      { lat: 36.0861034, lon: -115.1611002, name: 'Harry Reid International Airport (LAS)', type: 'airport', color: '#ffaa00' },
-      { lat: 36.1425082, lon: -115.1546065, name: 'Sahara Monorail Station', type: 'monorail', color: '#ff00ff' },
-      { lat: 36.1429244, lon: -115.1582000, name: 'Bus: Southbound Las Vegas after Sahara (The Deuce)', type: 'bus', color: '#ffffff' },
-      { lat: 36.1443500, lon: -115.1567827, name: 'Bus: Sahara (The Deuce)', type: 'bus', color: '#ffffff' },
-      { lat: 36.1466577, lon: -115.1552424, name: 'Bus: Northbound Las Vegas at the STRAT (Deuce)', type: 'bus', color: '#ffffff' },
-      { lat: 36.1329099, lon: -115.1550470, name: 'Bus: Southbound Paradise before Convention Center (108)', type: 'bus', color: '#ffffff' },
-    ];
+  function renderTransit(data) {
+    const t = data.transit || { links: [], nearbyStops: [] };
+    els['transit-feed'].innerHTML = `<div class="item"><h3>Official tracker handoff</h3><p>${esc(t.status || 'Use official live trackers for arrivals.')}</p><span class="tag info">no-key realtime limited</span></div>` +
+      (t.links || []).map(l => `<div class="item"><h3>${esc(l.label)}</h3><p><a href="${esc(l.url)}" target="_blank" rel="noopener">Open source <i class="fas fa-external-link-alt"></i></a></p></div>`).join('');
+  }
 
-    poi.forEach(p => {
-      L.marker([p.lat, p.lon], { icon: icon(p.color) }).addTo(map)
-        .bindPopup(`<b style="color:${p.color}">${p.name}</b>`);
-    });
+  function renderSources(data) {
+    const sources = data.sourceHealth || [];
+    els['source-feed'].innerHTML = sources.map(s => `<div class="source-row"><div><strong>${esc(s.name)}</strong><span>${esc(s.note || s.url || '')}</span></div><span class="tag ${s.ok ? 'good' : 'bad'}">${s.ok ? 'online' : 'error'}</span></div>`).join('');
+  }
 
-    // Impact zone circle
-    L.circle([36.1423481, -115.1569128], {
-      radius: 1609.34, // 1 mile in meters
-      color: '#00ff9d',
-      fillColor: '#00ff9d',
-      fillOpacity: 0.06,
-      weight: 1.5,
-      dashArray: '6, 6'
-    }).addTo(map).bindPopup('Crew-side Impact Zone (1 mile)');
+  async function loadLive() {
+    setStatus(false, 'UPDATING');
+    try {
+      const res = await fetch('/api/live', { cache: 'no-store' });
+      if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+      const data = await res.json();
+      lastData = data;
+      renderWeather(data); renderAlerts(data); renderRoads(data); renderTransit(data); renderSources(data);
+      setStatus(true, 'LIVE');
+      els['last-updated'].textContent = 'Updated: ' + new Date(data.generatedAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } catch (err) {
+      setStatus(false, 'DEGRADED');
+      els['last-updated'].textContent = 'Update failed';
+      els['source-feed'].innerHTML = `<div class="source-row"><div><strong>Live API unavailable</strong><span>${esc(err.message)} — static links still work.</span></div><span class="tag bad">error</span></div>`;
+      els['alert-feed'].innerHTML = '<div class="item"><h3>Live weather unavailable</h3><p>Use the NWS link until the API comes back.</p><a href="https://www.weather.gov/vef/" target="_blank" rel="noopener">NWS Las Vegas</a></div>';
+    }
+  }
 
-    // Primary con commute vector: Sahara crew hub to LVCC West Hall
-    L.polyline([[36.1423481, -115.1569128], [36.1314766, -115.1512278]], {
-      color: '#00d4ff',
-      weight: 2,
-      opacity: 0.65,
-      dashArray: '4, 8'
-    }).addTo(map).bindPopup('Sahara ⇄ LVCC West Hall corridor');
-
-    // Quick link to open directions from airport to Sahara
-    const routeControl = L.control({ position: 'topright' });
-    routeControl.onAdd = function() {
-      const div = L.DomUtil.create('div');
-      div.innerHTML = `<a href="https://www.google.com/maps/dir/Harry+Reid+International+Airport,+Las+Vegas,+NV/Sahara+Las+Vegas,+2535+S+Las+Vegas+Blvd,+Las+Vegas,+NV+89109" target="_blank" rel="noopener" style="background:rgba(10,10,15,.92);color:#00d4ff;border:1px solid #2a2a3a;padding:.35rem .55rem;border-radius:6px;text-decoration:none;font-size:.75rem;"><i class="fas fa-route"></i> Airport → Sahara</a>`;
-      return div;
-    };
-    routeControl.addTo(map);
-
-  })();
+  els.refresh.addEventListener('click', loadLive);
+  loadLive();
+  setInterval(loadLive, 120000);
 </script>
 </body>
 </html>
