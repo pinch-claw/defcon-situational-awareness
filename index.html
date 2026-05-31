@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>DEF CON Situational Awareness — Vegas</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --surface-2: #1a1a28;
+    --border: #2a2a3a;
+    --text: #e0e0e0;
+    --text-dim: #8888a0;
+    --accent: #00ff9d;
+    --accent-2: #00d4ff;
+    --warning: #ffaa00;
+    --danger: #ff4444;
+    --success: #00ff9d;
+    --radius: 8px;
+    --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    --mono: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    line-height: 1.5;
+    overflow-x: hidden;
+  }
+  .app { display: flex; flex-direction: column; height: 100vh; }
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0.75rem 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .brand { display: flex; align-items: center; gap: 0.75rem; }
+  .brand .logo {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    border-radius: var(--radius);
+    display: grid; place-items: center;
+    font-weight: 900; color: #000;
+    font-size: 1.1rem;
+  }
+  .brand h1 { font-size: 1.15rem; font-weight: 700; letter-spacing: -0.02em; }
+  .brand span { font-size: 0.75rem; color: var(--text-dim); display: block; margin-top: -2px; }
+  .meta { display: flex; align-items: center; gap: 1rem; font-family: var(--mono); font-size: 0.8rem; color: var(--text-dim); }
+  .meta .clock { color: var(--accent); font-weight: 600; }
+  .meta .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); display: inline-block; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+  .main { display: flex; flex: 1; overflow: hidden; }
+  .sidebar {
+    width: 340px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+  .panel { padding: 1rem; border-bottom: 1px solid var(--border); }
+  .panel-title { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.4rem; }
+  .panel-title i { color: var(--accent); }
+  .card {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    transition: border-color .2s;
+  }
+  .card:hover { border-color: var(--accent); }
+  .card h3 { font-size: 0.9rem; margin-bottom: 0.25rem; }
+  .card p, .card a { font-size: 0.8rem; color: var(--text-dim); }
+  .card a { color: var(--accent-2); text-decoration: none; }
+  .card a:hover { text-decoration: underline; }
+  .badge {
+    display: inline-block; padding: 0.15rem 0.45rem; border-radius: 999px; font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+    margin-top: 0.35rem;
+  }
+  .badge-green { background: rgba(0,255,157,.12); color: var(--success); border: 1px solid rgba(0,255,157,.25); }
+  .badge-yellow { background: rgba(255,170,0,.12); color: var(--warning); border: 1px solid rgba(255,170,0,.25); }
+  .badge-red { background: rgba(255,68,68,.12); color: var(--danger); border: 1px solid rgba(255,68,68,.25); }
+
+  .map-wrap { flex: 1; position: relative; }
+  #map { width: 100%; height: 100%; }
+  .map-overlay {
+    position: absolute; bottom: 1rem; left: 1rem; z-index: 500;
+    background: rgba(10,10,15,.92); backdrop-filter: blur(6px);
+    border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 0.6rem 0.8rem; font-size: 0.75rem; color: var(--text-dim);
+    max-width: 220px;
+  }
+  .map-overlay strong { color: var(--accent); }
+
+  .legend {
+    position: absolute; top: 1rem; right: 1rem; z-index: 500;
+    background: rgba(10,10,15,.92); backdrop-filter: blur(6px);
+    border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 0.6rem 0.8rem; font-size: 0.75rem;
+  }
+  .legend-item { display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.25rem; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+  @media (max-width: 900px) {
+    .main { flex-direction: column; }
+    .sidebar { width: 100%; border-right: none; border-bottom: 1px solid var(--border); max-height: 45vh; }
+    #map { min-height: 55vh; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand">
+      <div class="logo">DC</div>
+      <div>
+        <h1>DEF CON Situational Awareness</h1>
+        <span>Las Vegas, NV — Sahara / STRIP Corridor</span>
+      </div>
+    </div>
+    <div class="meta">
+      <span><span class="status-dot"></span> LIVE</span>
+      <span class="clock" id="clock">--:--:-- PST</span>
+      <span id="last-updated">Updated: now</span>
+    </div>
+  </header>
+
+  <div class="main">
+    <aside class="sidebar">
+      <div class="panel">
+        <div class="panel-title"><i class="fas fa-bullhorn"></i> Active Alerts</div>
+        <div class="card" id="alert-box">
+          <h3>No Critical Alerts</h3>
+          <p>Check external feeds below for real-time road closures and transit disruptions.</p>
+          <span class="badge badge-green">All Clear</span>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title"><i class="fas fa-car"></i> Traffic & Roads</div>
+        <div class="card">
+          <h3><i class="fas fa-map-marked-alt" style="color:var(--accent-2)"></i> Google Maps Traffic</h3>
+          <p>Live traffic layer for the Sahara / STRIP corridor.</p>
+          <a href="https://www.google.com/maps/search/Sahara+Las+Vegas/@36.1423,-115.1569,15z/data=!5m1!1e1" target="_blank" rel="noopener">Open Traffic Map <i class="fas fa-external-link-alt" style="font-size:.65rem"></i></a>
+        </div>
+        <div class="card">
+          <h3><i class="fas fa-road" style="color:var(--warning)"></i> NDOT Road Conditions</h3>
+          <p>Nevada DOT road closures and construction.</p>
+          <a href="https://www.nvroads.com/" target="_blank" rel="noopener">NV Roads <i class="fas fa-external-link-alt" style="font-size:.65rem"></i></a>
+        </div>
+        <div class="card">
+          <h3><i class="fas fa-taxi" style="color:var(--accent)"></i> Rideshare / Taxi</h3>
+          <p>Expect surge pricing around Sahara & Convention Center.</p>
+          <span class="badge badge-yellow">Elevated Demand Expected</span>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title"><i class="fas fa-bus"></i> Transit</div>
+        <div class="card">
+          <h3><i class="fas fa-shuttle-van" style="color:var(--accent-2)"></i> RTC / The Deuce</h3>
+          <p>24hr bus service on Las Vegas Blvd. Routes 108, Deuce, WX.</p>
+          <a href="https://www.rtcsnv.com/" target="_blank" rel="noopener">RTC Schedules <i class="fas fa-external-link-alt" style="font-size:.65rem"></i></a>
+        </div>
+        <div class="card">
+          <h3><i class="fas fa-train" style="color:var(--accent)"></i> Las Vegas Monorail</h3>
+          <p>Sahara station is steps from the con. Runs north–south behind the Strip.</p>
+          <a href="https://www.lvmonorail.com/" target="_blank" rel="noopener">Monorail Schedule <i class="fas fa-external-link-alt" style="font-size:.65rem"></i></a>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title"><i class="fas fa-plane-departure"></i> Airport</div>
+        <div class="card">
+          <h3><i class="fas fa-plane" style="color:var(--accent-2)"></i> Harry Reid (LAS)</h3>
+          <p>~4.5 miles south of Sahara. Allow extra time for security lines during con week.</p>
+          <a href="https://www.harryreidairport.com/" target="_blank" rel="noopener">Flight Status <i class="fas fa-external-link-alt" style="font-size:.65rem"></i></a>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title"><i class="fas fa-cloud-sun"></i> Weather</div>
+        <div class="card">
+          <h3>Las Vegas Forecast</h3>
+          <p>August in Vegas: expect 100–110°F days, dry heat. Hydrate constantly.</p>
+          <a href="https://www.weather.gov/vef/" target="_blank" rel="noopener">NWS Las Vegas <i class="fas fa-external-link-alt" style="font-size:.65rem"></i></a>
+        </div>
+      </div>
+    </aside>
+
+    <div class="map-wrap">
+      <div id="map"></div>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:var(--accent)"></div> DEF CON (Sahara)</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--accent-2)"></div> Convention Center</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--warning)"></div> Airport</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#ff00ff"></div> Monorail</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#ffffff"></div> Bus Stop</div>
+        <div class="legend-item" style="margin-top:.25rem;opacity:.7;font-size:.65rem;">Impact zone = 1 mi radius</div>
+      </div>
+      <div class="map-overlay">
+        <strong>Impact Zone</strong><br>
+        1 mi (1.6 km) radius around Sahara captures the primary DEF CON foot-traffic and transit corridor.
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+  (function(){
+    // Clock
+    function updateClock(){
+      const now = new Date();
+      const opts = { timeZone:'America/Los_Angeles', hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false };
+      document.getElementById('clock').textContent = now.toLocaleTimeString('en-US', opts) + ' PST';
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // Last updated timer
+    const start = Date.now();
+    setInterval(() => {
+      const s = Math.floor((Date.now() - start) / 1000);
+      const m = Math.floor(s / 60);
+      const h = Math.floor(m / 60);
+      let txt = 'Updated: ';
+      if (h) txt += h + 'h ';
+      if (m % 60) txt += (m % 60) + 'm ';
+      txt += (s % 60) + 's ago';
+      document.getElementById('last-updated').textContent = txt;
+    }, 5000);
+
+    // Map
+    const map = L.map('map', { zoomControl: false }).setView([36.1423, -115.1569], 14);
+    L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+    // Dark-themed tiles (CartoDB Dark Matter)
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; OpenStreetMap &copy; CARTO',
+      subdomains: 'abcd',
+      maxZoom: 20
+    }).addTo(map);
+
+    const icon = (color) => L.divIcon({
+      className: 'custom-marker',
+      html: `<div style="width:14px;height:14px;border-radius:50%;background:${color};border:2px solid #0a0a0f;box-shadow:0 0 8px ${color};"></div>`,
+      iconSize: [14, 14],
+      iconAnchor: [7, 7]
+    });
+
+    const poi = [
+      { lat: 36.1423481, lon: -115.1569128, name: 'DEF CON — Sahara Las Vegas', type: 'defcon', color: '#00ff9d' },
+      { lat: 36.1314766, lon: -115.1512278, name: 'Las Vegas Convention Center', type: 'convention', color: '#00d4ff' },
+      { lat: 36.0861034, lon: -115.1611002, name: 'Harry Reid International Airport (LAS)', type: 'airport', color: '#ffaa00' },
+      { lat: 36.1425082, lon: -115.1546065, name: 'Sahara Monorail Station', type: 'monorail', color: '#ff00ff' },
+      { lat: 36.1429244, lon: -115.1582000, name: 'Bus: Southbound Las Vegas after Sahara (The Deuce)', type: 'bus', color: '#ffffff' },
+      { lat: 36.1443500, lon: -115.1567827, name: 'Bus: Sahara (The Deuce)', type: 'bus', color: '#ffffff' },
+      { lat: 36.1466577, lon: -115.1552424, name: 'Bus: Northbound Las Vegas at the STRAT (Deuce)', type: 'bus', color: '#ffffff' },
+      { lat: 36.1329099, lon: -115.1550470, name: 'Bus: Southbound Paradise before Convention Center (108)', type: 'bus', color: '#ffffff' },
+    ];
+
+    poi.forEach(p => {
+      L.marker([p.lat, p.lon], { icon: icon(p.color) }).addTo(map)
+        .bindPopup(`<b style="color:${p.color}">${p.name}</b>`);
+    });
+
+    // Impact zone circle
+    L.circle([36.1423481, -115.1569128], {
+      radius: 1609.34, // 1 mile in meters
+      color: '#00ff9d',
+      fillColor: '#00ff9d',
+      fillOpacity: 0.06,
+      weight: 1.5,
+      dashArray: '6, 6'
+    }).addTo(map).bindPopup('DEF CON Impact Zone (1 mile)');
+
+    // Quick link to open directions from airport to Sahara
+    L.control({ position: 'topright' }).onAdd = function() {
+      const div = L.DomUtil.create('div');
+      div.innerHTML = `<a href="https://www.google.com/maps/dir/Harry+Reid+International+Airport,+Las+Vegas,+NV/Sahara+Las+Vegas,+2535+S+Las+Vegas+Blvd,+Las+Vegas,+NV+89109" target="_blank" rel="noopener" style="background:rgba(10,10,15,.92);color:#00d4ff;border:1px solid #2a2a3a;padding:.35rem .55rem;border-radius:6px;text-decoration:none;font-size:.75rem;"><i class="fas fa-route"></i> Airport → Sahara</a>`;
+      return div;
+    };
+    map.addControl(L.control({ position: 'topright' }));
+
+  })();
+</script>
+</body>
+</html>
