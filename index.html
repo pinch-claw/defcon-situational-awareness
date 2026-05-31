@@ -126,12 +126,12 @@
       <div class="logo">DC</div>
       <div>
         <h1>DEF CON Situational Awareness</h1>
-        <span>Las Vegas, NV — Sahara / STRIP Corridor</span>
+        <span>Las Vegas, NV — LVCC West Hall / Sahara corridor</span>
       </div>
     </div>
     <div class="meta">
       <span><span class="status-dot"></span> LIVE</span>
-      <span class="clock" id="clock">--:--:-- PST</span>
+      <span class="clock" id="clock">--:--:-- PT</span>
       <span id="last-updated">Updated: now</span>
     </div>
   </header>
@@ -151,7 +151,7 @@
         <div class="panel-title"><i class="fas fa-car"></i> Traffic & Roads</div>
         <div class="card">
           <h3><i class="fas fa-map-marked-alt" style="color:var(--accent-2)"></i> Google Maps Traffic</h3>
-          <p>Live traffic layer for the Sahara / STRIP corridor.</p>
+          <p>Live traffic layer for the LVCC West Hall / Sahara corridor.</p>
           <a href="https://www.google.com/maps/search/Sahara+Las+Vegas/@36.1423,-115.1569,15z/data=!5m1!1e1" target="_blank" rel="noopener">Open Traffic Map <i class="fas fa-external-link-alt" style="font-size:.65rem"></i></a>
         </div>
         <div class="card">
@@ -161,7 +161,7 @@
         </div>
         <div class="card">
           <h3><i class="fas fa-taxi" style="color:var(--accent)"></i> Rideshare / Taxi</h3>
-          <p>Expect surge pricing around Sahara & Convention Center.</p>
+          <p>Expect surge pricing around Sahara and LVCC West Hall.</p>
           <span class="badge badge-yellow">Elevated Demand Expected</span>
         </div>
       </div>
@@ -175,7 +175,7 @@
         </div>
         <div class="card">
           <h3><i class="fas fa-train" style="color:var(--accent)"></i> Las Vegas Monorail</h3>
-          <p>Sahara station is steps from the con. Runs north–south behind the Strip.</p>
+          <p>Sahara station is the crew-side railhead; Boingo Station serves LVCC West Hall.</p>
           <a href="https://www.lvmonorail.com/" target="_blank" rel="noopener">Monorail Schedule <i class="fas fa-external-link-alt" style="font-size:.65rem"></i></a>
         </div>
       </div>
@@ -202,8 +202,8 @@
     <div class="map-wrap">
       <div id="map"></div>
       <div class="legend">
-        <div class="legend-item"><div class="legend-dot" style="background:var(--accent)"></div> DEF CON (Sahara)</div>
-        <div class="legend-item"><div class="legend-dot" style="background:var(--accent-2)"></div> Convention Center</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--accent)"></div> DEF CON / LVCC West</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--accent-2)"></div> Crew Rally / Sahara</div>
         <div class="legend-item"><div class="legend-dot" style="background:var(--warning)"></div> Airport</div>
         <div class="legend-item"><div class="legend-dot" style="background:#ff00ff"></div> Monorail</div>
         <div class="legend-item"><div class="legend-dot" style="background:#ffffff"></div> Bus Stop</div>
@@ -211,7 +211,7 @@
       </div>
       <div class="map-overlay">
         <strong>Impact Zone</strong><br>
-        1 mi (1.6 km) radius around Sahara captures the primary DEF CON foot-traffic and transit corridor.
+        1 mi (1.6 km) radius around Sahara captures the crew-side foot-traffic and transit corridor.
       </div>
     </div>
   </div>
@@ -224,7 +224,7 @@
     function updateClock(){
       const now = new Date();
       const opts = { timeZone:'America/Los_Angeles', hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false };
-      document.getElementById('clock').textContent = now.toLocaleTimeString('en-US', opts) + ' PST';
+      document.getElementById('clock').textContent = now.toLocaleTimeString('en-US', opts) + ' PT';
     }
     setInterval(updateClock, 1000);
     updateClock();
@@ -261,8 +261,8 @@
     });
 
     const poi = [
-      { lat: 36.1423481, lon: -115.1569128, name: 'DEF CON — Sahara Las Vegas', type: 'defcon', color: '#00ff9d' },
-      { lat: 36.1314766, lon: -115.1512278, name: 'Las Vegas Convention Center', type: 'convention', color: '#00d4ff' },
+      { lat: 36.1314766, lon: -115.1512278, name: 'DEF CON 34 — LVCC West Hall', type: 'defcon', color: '#00ff9d' },
+      { lat: 36.1423481, lon: -115.1569128, name: 'Crew Rally Point — Sahara Las Vegas', type: 'rally', color: '#00d4ff' },
       { lat: 36.0861034, lon: -115.1611002, name: 'Harry Reid International Airport (LAS)', type: 'airport', color: '#ffaa00' },
       { lat: 36.1425082, lon: -115.1546065, name: 'Sahara Monorail Station', type: 'monorail', color: '#ff00ff' },
       { lat: 36.1429244, lon: -115.1582000, name: 'Bus: Southbound Las Vegas after Sahara (The Deuce)', type: 'bus', color: '#ffffff' },
@@ -284,15 +284,24 @@
       fillOpacity: 0.06,
       weight: 1.5,
       dashArray: '6, 6'
-    }).addTo(map).bindPopup('DEF CON Impact Zone (1 mile)');
+    }).addTo(map).bindPopup('Crew-side Impact Zone (1 mile)');
+
+    // Primary con commute vector: Sahara crew hub to LVCC West Hall
+    L.polyline([[36.1423481, -115.1569128], [36.1314766, -115.1512278]], {
+      color: '#00d4ff',
+      weight: 2,
+      opacity: 0.65,
+      dashArray: '4, 8'
+    }).addTo(map).bindPopup('Sahara ⇄ LVCC West Hall corridor');
 
     // Quick link to open directions from airport to Sahara
-    L.control({ position: 'topright' }).onAdd = function() {
+    const routeControl = L.control({ position: 'topright' });
+    routeControl.onAdd = function() {
       const div = L.DomUtil.create('div');
       div.innerHTML = `<a href="https://www.google.com/maps/dir/Harry+Reid+International+Airport,+Las+Vegas,+NV/Sahara+Las+Vegas,+2535+S+Las+Vegas+Blvd,+Las+Vegas,+NV+89109" target="_blank" rel="noopener" style="background:rgba(10,10,15,.92);color:#00d4ff;border:1px solid #2a2a3a;padding:.35rem .55rem;border-radius:6px;text-decoration:none;font-size:.75rem;"><i class="fas fa-route"></i> Airport → Sahara</a>`;
       return div;
     };
-    map.addControl(L.control({ position: 'topright' }));
+    routeControl.addTo(map);
 
   })();
 </script>
